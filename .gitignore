@@ -17,6 +17,17 @@ out/
 dist/
 build/
 
+# Frontend build outputs
+frontend/.next/
+frontend/out/
+frontend/node_modules/
+
+# Worker build outputs
+worker/node_modules/
+
+# Root node_modules (if any)
+node_modules/
+
 # IDE
 .vscode/
 .idea/

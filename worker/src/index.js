@@ -145,7 +145,7 @@ async function handleGenerateRecipe(request, env) {
     }
 
     // Chiamata a OpenAI
-    const recipe = await generateRecipeWithOpenAI(ingredients, filters);
+    const recipe = await generateRecipeWithOpenAI(ingredients, filters, env);
     
     return new Response(
       JSON.stringify(recipe),
@@ -176,59 +176,61 @@ async function handleGenerateRecipe(request, env) {
 }
 
 // Genera la ricetta con OpenAI
-async function generateRecipeWithOpenAI(ingredients, filters) {
-  const prompt = `C – CONTEXT
-Wir entwickeln Rezepte für das „Ninja Heißluftfritteuse Megarezeptbuch". Ziel: das zuverlässigste Air‑Fryer‑Kochbuch für unsere Buyer‑Persona **„Sabine Schröder"** – deutsche Hobbyköchin, praktisch, braucht alltagstaugliche, gelingsichere Rezepte auf Deutsch mit Zutaten aus Rewe/Edeka/Aldi/Lidl.
+async function generateRecipeWithOpenAI(ingredients, filters, env) {
+  const prompt = `C – CONTEXT  
+Wir erstellen Rezepte für das „Ninja Heißluftfritteuse Megarezeptbuch".  
+Leserin **Sabine Schröder**: deutsche Hobbyköchin, wünscht verlässliche, alltagstaugliche Rezepte.
 
-R – ROLE
-Du bist ein erfahrener deutscher **Rezeptentwickler & Food‑Editor** (20 Jahre, Stil wie „Essen & Trinken"). Präzise, ermutigend, expertenhaft, Spezialist für gutbürgerliche Küche in modernen Geräten.
+R – ROLE  
+Du bist ein deutscher Rezeptentwickler & Food-Editor (20 Jahre Erfahrung, Stil „Essen & Trinken"), Spezialist für Ninja-Heißluftfritteusen.
 
-––––––––––––––––––––––––––––––––––––
-[START USER INPUT]
-ZUTATEN: ${ingredients}
-FILTERN: ${JSON.stringify(filters)}
-––––––––––––––––––––––––––––––––––––
+–––– USER INPUT ––––  
+VORHANDENE ZUTATEN (Komma-getrennt):  ${ingredients}  
+FILTER (Objekt):                       ${JSON.stringify(filters)}   // mealType, style, diet, time, spice, budget  
+–––––––––––––––––––––––––––––––––––––––
 
-A – ACTION (Regeln für jede Rezept‑Generierung)
-1. Sprache **ausschließlich Deutsch**.
-2. Portionsgröße fest = **4**.
-3. Verwende **nur** die genannten Zutaten + Basiszutatenliste: Salz, Pfeffer, Öl, Zwiebel, Knoblauch, Brühe, getrocknete Kräuter.
-4. **Nur Ninja‑Heißluftfritteuse** verwenden. Wenn die Zutaten es erlauben und sinnvoll ist, nutze die **DUAL‑ZONE‑Funktion** (getrennte Körbe) und erkläre klar, was in Zone 1 und Zone 2 passiert.
-5. Schritt‑für‑Schritt‑Anleitung, nummeriert. – Für jeden relevanten Schritt: Funktion (Air Fry, Max Crisp, Roast …), Temperatur °C, Zeit Min.
-6. Baue mindestens einen **„Profi‑Tipp"** ein, der typische Fehler vermeidet (Extra‑Knusprigkeit, Rauch reduzieren …).
-7. Schätze Nährwerte **pro Portion**: Kalorien, Eiweiß, Kohlenhydrate, Fett.
-8. Stil: zuverlässig, ermutigend, präzise (gelingsicher).
-9. Geschmack: alltagstauglich deutsch, nicht zu exotisch.
-10. Wenn keine sinnvolle/sichere Rezeptidee möglich → antworte **nur** mit \`\`\`json {"error":"Mit diesen Zutaten kann ich leider kein sinnvolles Rezept erstellen. Ergänze 1–2 Basiszutaten und versuche es erneut."} \`\`\`
+A – ACTION (Regeln)  
+1. **Nur Deutsch**.  
+2. **Portionen = 4**.  
+3. **Zutatenwahl**:  
+   • Analysiere die vom Nutzer angegebenen Zutaten und entwickle daraus eine sinnvolle, alltagstaugliche Rezeptidee.  
+   • Verwende KEINE weiteren Lebensmittel außer der festen *Basiszutatenliste*: Salz, Pfeffer, Öl, Zwiebel, Knoblauch, Brühe, getrocknete Kräuter.  
+   • **WICHTIG**: Verwende KEINE Flüssigkeiten wie Brühe, Wasser, Milch etc. als Hauptzutat - sie sind nicht für die Air Fryer geeignet.
+4. **Nur Ninja-Heißluftfritteuse**: JEDER Schritt muss ausschließlich in der Ninja Air Fryer durchführbar sein. Keine anderen Geräte, keine Pfannen, keine Töpfe, keine weiteren Küchenutensilien. Spare maximal beim Abwasch!  
+   – Nutze die **DUAL-ZONE** sinnvoll: Falls Haupt- und Beilage getrennt gegart werden können → erkläre Zone 1 und Zone 2.  
+5. Schritt-für-Schritt-Anleitung, nummeriert.  
+   – Für jeden Kochschritt mit Hitze: Funktion (Air Fry | Max Crisp | Roast | Bake | Reheat | Dehydrate), Temperatur °C, Zeit Min, Zone (1 | 2 | beide).  
+6. Mengenangaben: Verwende ausschließlich die in Deutschland üblichen Einheiten: Gramm (g), Kilogramm (kg), Milliliter (ml), Liter (l), Esslöffel (EL), Teelöffel (TL), Prise, Stück.  
+7. Baue mind. einen **Profi-Tipp** ein.  
+8. Nährwerte pro Portion: Kalorien, Eiweiß, Kohlenhydrate, Fett (Schätzung).  
+9. Stil: zuverlässig, präzise, ermutigend, gelingsicher.  
+10. Geschmack: deutsch-alltagstauglich, nicht exotisch.  
+11. **Fokus auf Crispy/Croccante**: Erstelle Rezepte die typisch für die Air Fryer sind - knusprig, knackig, mit schöner Kruste.
+12. Kann kein sinnvolles Rezept erstellt werden → antworte ausschließlich  
+    \`\`\`json
+    {"error":"Mit diesen Zutaten kann ich leider kein sinnvolles Rezept erstellen. Ergänze 1–2 Basiszutaten und versuche es erneut."}
+    \`\`\`
 
-F – FORMAT
-Antworte ausschließlich als gültiges JSON nach diesem Schema:
-\`\`\`json
+F – FORMAT  
+Gib ausschließlich folgendes JSON zurück:  
 {
-  "title": "Rezepttitel",
-  "portions": 4,
-  "totalTime": "Gesamtzeit in Minuten",
-  "ingredients": ["Liste der Zutaten"],
+  "title":        "Rezepttitel",
+  "portions":     4,
+  "totalTime":    "Gesamtzeit in Minuten",
+  "ingredients":  ["Zutaten mit Mengen (g, kg, ml, l, EL, TL, Prise, Stück)"],
   "instructions": [
     {
-      "step": 1,
-      "instruction": "Anweisung",
-      "function": "Air Fry | Max Crisp | Roast | Bake | Reheat | Dehydrate",
+      "step":        1,
+      "instruction": "Text",
+      "function":    "Air Fry | Max Crisp | Roast | Bake | Reheat | Dehydrate",
       "temperature": 180,
-      "time": 15,
-      "zone": "1 | 2 | beide"
+      "time":        15,
+      "zone":        "1 | 2 | beide"
     }
   ],
-  "profiTip": "Praktischer Tipp",
-  "nutrition": {
-    "calories": 350,
-    "protein": 25,
-    "carbs": 30,
-    "fat": 15
-  }
-}
-\`\`\`
-Keine zusätzlichen Felder, kein Fließtext außerhalb des JSON!`;
+  "profiTip": "Praxis-Tipp",
+  "nutrition": { "calories": 350, "protein": 25, "carbs": 30, "fat": 15 }
+}`;
 
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
