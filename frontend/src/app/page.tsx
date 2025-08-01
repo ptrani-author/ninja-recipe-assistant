@@ -54,7 +54,14 @@ export default function Home() {
       if (remaining && resetTime) {
         setRateLimitInfo({
           remaining: parseInt(remaining),
-          resetTime: new Date(parseInt(resetTime)).toLocaleString()
+          resetTime: new Date(parseInt(resetTime)).toLocaleString('de-DE', {
+            timeZone: 'Europe/Berlin',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          })
         });
       }
 

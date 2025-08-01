@@ -2,13 +2,10 @@ name = "ninja-recipe-api"
 main = "src/index.js"
 compatibility_date = "2024-01-01"
 
-[env.production]
-name = "ninja-recipe-api"
-
 [[kv_namespaces]]
 binding = "RATE_LIMITS"
-id = "your-kv-namespace-id"
-preview_id = "your-preview-kv-namespace-id"
+id = "264f5e50d1b547f593b4f4d40d2dbb77"
+preview_id = "264f5e50d1b547f593b4f4d40d2dbb77"
 
 [vars]
 ENVIRONMENT = "production" 

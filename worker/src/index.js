@@ -110,10 +110,20 @@ async function handleGenerateRecipe(request, env) {
     const rateLimit = await checkRateLimit(ip, env);
     
     if (!rateLimit.allowed) {
-      const resetTime = new Date(rateLimit.resetTime).toLocaleString('de-DE');
+      // Converti in fuso orario tedesco (CET/CEST)
+      const resetDate = new Date(rateLimit.resetTime);
+      const resetTime = resetDate.toLocaleString('de-DE', {
+        timeZone: 'Europe/Berlin',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
       return new Response(
         JSON.stringify({
-          error: `Rate limit exceeded. You can make ${rateLimit.remaining} more requests. Limit resets at ${resetTime}.`
+          error: `Rate limit exceeded. You can make ${rateLimit.remaining} more requests. Limit resets at ${resetTime} (German time).`
         }),
         {
           status: 429,
